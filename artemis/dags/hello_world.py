@@ -18,9 +18,7 @@ def hello_world_loop():
         print(test_variable)
 
 
-with (
-    DAG(dag_id="hello_world", default_args=default_args, schedule="@once") as dag
-):  # with DAG(dag_id="hello_world", default_args=default_args, schedule="@once") as dag
+with DAG(dag_id="hello_world", default_args=default_args, schedule="@once") as dag:
     test_start = EmptyOperator(task_id="test_start")
 
     test_python = PythonOperator(

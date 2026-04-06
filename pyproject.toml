@@ -49,7 +49,7 @@ indent-width = 4
 
 # Rules: https://docs.astral.sh/ruff/rules/
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "AIR"]
+select = ["E4", "E7", "E9", "F", "I", "AIR"]
 ignore = []
 fixable = ["ALL"]
 unfixable = ["AIR"]
