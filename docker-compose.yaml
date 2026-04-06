@@ -443,17 +443,22 @@ services:
 
   vault:
     image: hashicorp/vault:1.18
-    command: ["vault", "server", "-dev", "-dev-root-token-id=airflow", "-dev-listen-address=0.0.0.0:8200"]
+    command: ["vault", "server", "-config=/vault/config/config.hcl"]
     cap_add:
       - IPC_LOCK
     ports:
       - "8200:8200"
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    volumes:
+      - vault-data:/vault/data
+      - ./vault/config.hcl:/vault/config/config.hcl:ro
     healthcheck:
-      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      test: ["CMD", "vault", "status"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 30
+      start_period: 30s
     restart: always
 
   vault-init:
@@ -461,16 +466,17 @@ services:
     command: ["/bin/sh", "/vault-init.sh"]
     environment:
       VAULT_ADDR: http://vault:8200
-      VAULT_TOKEN: airflow
     volumes:
+      - vault-data:/vault/data
       - ./vault/init.sh:/vault-init.sh:ro
     depends_on:
       vault:
-        condition: service_healthy
-    restart: on-failure
+        condition: service_started
+    restart: always
 
 volumes:
   postgres-db-volume:
   elasticsearch-data:
   prometheus-data:
   grafana-data:
+  vault-data:

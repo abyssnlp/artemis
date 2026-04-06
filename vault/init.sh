@@ -1,33 +1,62 @@
 #!/bin/sh
-set -e
 
-until vault status > /dev/null 2>&1; do
-  echo "Waiting for Vault to be ready..."
+KEYS_DIR="/vault/data"
+
+echo "Waiting for Vault to start..."
+while true; do
+  vault status > /dev/null 2>&1
+  CODE=$?
+  [ $CODE -eq 0 ] || [ $CODE -eq 2 ] && break
   sleep 2
 done
 
-echo "Vault is ready. Writing sample Airflow secrets..."
+while true; do
+  vault status > /dev/null 2>&1
+  VAULT_CODE=$?
 
-vault kv put secret/connections/postgres_default \
-  conn_uri="postgresql+psycopg2://airflow:airflow@postgres:5432/airflow"
+  if [ $VAULT_CODE -eq 2 ]; then
+    IS_INIT=$(vault status 2>/dev/null | grep '^Initialized' | awk '{print $2}')
 
-vault kv put secret/connections/redis_default \
-  conn_uri="redis://:@redis:6379/0"
+    if [ "$IS_INIT" = "false" ]; then
+      echo "Initializing Vault..."
+      INIT_OUT=$(vault operator init -key-shares=1 -key-threshold=1)
+      echo "$INIT_OUT" | grep 'Unseal Key 1:' | awk '{print $NF}' > "$KEYS_DIR/.unseal_key"
+      echo "$INIT_OUT" | grep 'Initial Root Token:' | awk '{print $NF}' > "$KEYS_DIR/.root_token"
+      echo "Initialized."
+    fi
 
-vault kv put secret/variables/airflow_env \
-  value=development
+    UNSEAL_KEY=$(cat "$KEYS_DIR/.unseal_key" 2>/dev/null)
+    if [ -n "$UNSEAL_KEY" ]; then
+      echo "Unsealing Vault..."
+      vault operator unseal "$UNSEAL_KEY" > /dev/null
+      echo "Unsealed."
+    fi
+  elif [ $VAULT_CODE -eq 0 ]; then
+    ROOT_TOKEN=$(cat "$KEYS_DIR/.root_token" 2>/dev/null)
+    if [ -n "$ROOT_TOKEN" ]; then
+      export VAULT_TOKEN="$ROOT_TOKEN"
 
-echo "Vault initialization complete."
-echo ""
-echo "Connections written:"
-echo "  secret/connections/postgres_default"
-echo "  secret/connections/redis_default"
-echo ""
-echo "Variables written:"
-echo "  secret/variables/airflow_env"
-echo ""
-echo "NOTE: Vault-managed connections and variables are resolved at task runtime only."
-echo "They do not appear in the Airflow UI. Use the Vault UI at http://localhost:8200 to manage them."
-echo "To verify a connection resolves: docker exec <scheduler-container> airflow connections get <conn_id>"
-echo "To add a new connection: vault kv put secret/connections/<conn_id> conn_uri=\"<uri>\""
-echo "To add a new variable:   vault kv put secret/variables/<key> value=<value>"
+      vault secrets list 2>/dev/null | grep -q '^secret/' || \
+        vault secrets enable -path=secret kv-v2 > /dev/null
+
+      vault token lookup airflow > /dev/null 2>&1 || \
+        vault token create -id=airflow -policy=root -no-default-policy -orphan -ttl=87600h > /dev/null
+
+      vault kv get secret/connections/postgres_default > /dev/null 2>&1 || \
+        vault kv put secret/connections/postgres_default \
+          conn_uri="postgresql+psycopg2://airflow:airflow@postgres:5432/airflow"
+
+      vault kv get secret/connections/redis_default > /dev/null 2>&1 || \
+        vault kv put secret/connections/redis_default \
+          conn_uri="redis://:@redis:6379/0"
+
+      vault kv get secret/variables/airflow_env > /dev/null 2>&1 || \
+        vault kv put secret/variables/airflow_env value=development
+
+      echo "Vault ready."
+    fi
+  fi
+
+  sleep 10
+done
+

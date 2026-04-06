@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 from datetime import datetime
 
-from airflow.models import DAG
+from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import PythonOperator
-from airflow.providers.standard.operators.bash import BashOperator
-from airflow.sdk import Variable
-
+from airflow.sdk import DAG, Variable
 
 default_args = {"owner": "shauryarawat", "start_date": datetime(2026, 4, 4, 0, 0, 0)}
 
@@ -18,8 +18,9 @@ def hello_world_loop():
         print(test_variable)
 
 
-with DAG(dag_id="hello_world", default_args=default_args, schedule="@once") as dag:
-
+with (
+    DAG(dag_id="hello_world", default_args=default_args, schedule="@once") as dag
+):  # with DAG(dag_id="hello_world", default_args=default_args, schedule="@once") as dag
     test_start = EmptyOperator(task_id="test_start")
 
     test_python = PythonOperator(

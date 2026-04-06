@@ -10,3 +10,4 @@ data/out
 logs
 plugins
 **/config/airflow.cfg
+.ruff_cache
