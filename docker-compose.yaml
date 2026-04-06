@@ -72,6 +72,12 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    AIRFLOW__METRICS__STATSD_ON: 'true'
+    AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
+    AIRFLOW__METRICS__STATSD_PORT: '9125'
+    AIRFLOW__METRICS__STATSD_PREFIX: airflow
+    AIRFLOW__SECRETS__BACKEND: airflow.providers.hashicorp.secrets.vault.VaultBackend
+    AIRFLOW__SECRETS__BACKEND_KWARGS: '{"connections_path": "connections", "variables_path": "variables", "config_path": null, "url": "http://vault:8200", "token": "airflow", "mount_point": "secret"}'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -83,6 +89,8 @@ x-airflow-common:
     redis:
       condition: service_healthy
     postgres:
+      condition: service_healthy
+    vault:
       condition: service_healthy
 
 services:
@@ -331,5 +339,138 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+  elasticsearch:
+    image: elasticsearch:8.17.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: always
+
+  kibana:
+    image: kibana:8.17.0
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: always
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  filebeat:
+    image: elastic/filebeat:8.17.0
+    user: root
+    command: filebeat -e --strict.perms=false
+    volumes:
+      - ./monitoring/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${AIRFLOW_PROJ_DIR:-.}/logs:/var/log/airflow:ro
+    restart: always
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  statsd-exporter:
+    image: prom/statsd-exporter:v0.28.0
+    command:
+      - "--statsd.mapping-config=/etc/statsd/statsd_mapping.yml"
+      - "--statsd.listen-udp=:9125"
+      - "--web.listen-address=:9102"
+    ports:
+      - "9102:9102"
+      - "9125:9125/udp"
+    volumes:
+      - ./monitoring/statsd/statsd_mapping.yml:/etc/statsd/statsd_mapping.yml:ro
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    restart: always
+    depends_on:
+      - statsd-exporter
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    restart: always
+    depends_on:
+      - prometheus
+
+  kibana-setup:
+    image: curlimages/curl:8.11.0
+    command: ["/bin/sh", "/kibana-setup.sh"]
+    volumes:
+      - ./monitoring/kibana/setup.sh:/kibana-setup.sh:ro
+    depends_on:
+      kibana:
+        condition: service_healthy
+    restart: on-failure
+
+  vault:
+    image: hashicorp/vault:1.18
+    command: ["vault", "server", "-dev", "-dev-root-token-id=airflow", "-dev-listen-address=0.0.0.0:8200"]
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  vault-init:
+    image: hashicorp/vault:1.18
+    command: ["/bin/sh", "/vault-init.sh"]
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: airflow
+    volumes:
+      - ./vault/init.sh:/vault-init.sh:ro
+    depends_on:
+      vault:
+        condition: service_healthy
+    restart: on-failure
+
 volumes:
   postgres-db-volume:
+  elasticsearch-data:
+  prometheus-data:
+  grafana-data:

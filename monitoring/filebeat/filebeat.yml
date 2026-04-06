@@ -1,0 +1,44 @@
+filebeat.inputs:
+  - type: container
+    id: docker-containers
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+
+  - type: log
+    id: airflow-task-logs
+    paths:
+      - /var/log/airflow/dag_id=*/**/*.log
+    fields:
+      log_type: airflow_task
+    fields_under_root: true
+    multiline:
+      type: pattern
+      pattern: '^\['
+      negate: true
+      match: after
+    processors:
+      - dissect:
+          tokenizer: "/var/log/airflow/dag_id=%{dag_id}/run_id=%{run_id}/task_id=%{task_id}/%{}"
+          field: "log.file.path"
+          target_prefix: ""
+          ignore_failure: true
+
+processors:
+  - add_fields:
+      target: ""
+      fields:
+        environment: local
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  index: "airflow-logs-%{+yyyy.MM.dd}"
+
+setup.ilm.enabled: false
+setup.template.name: "airflow-logs"
+setup.template.pattern: "airflow-logs-*"
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0

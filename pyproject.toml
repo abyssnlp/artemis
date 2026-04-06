@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "apache-airflow==3.0.6",
     "apache-airflow-providers-hashicorp",
+    "apache-airflow-providers-elasticsearch",
 ]
 
 [build-system]
