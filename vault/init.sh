@@ -19,10 +19,19 @@ while true; do
 
     if [ "$IS_INIT" = "false" ]; then
       echo "Initializing Vault..."
-      INIT_OUT=$(vault operator init -key-shares=1 -key-threshold=1)
-      echo "$INIT_OUT" | grep 'Unseal Key 1:' | awk '{print $NF}' > "$KEYS_DIR/.unseal_key"
-      echo "$INIT_OUT" | grep 'Initial Root Token:' | awk '{print $NF}' > "$KEYS_DIR/.root_token"
-      echo "Initialized."
+      if INIT_OUT=$(vault operator init -key-shares=1 -key-threshold=1 2>&1); then
+        UNSEAL_KEY=$(echo "$INIT_OUT" | grep 'Unseal Key 1:' | awk '{print $NF}')
+        ROOT_TOKEN=$(echo "$INIT_OUT" | grep 'Initial Root Token:' | awk '{print $NF}')
+        if [ -n "$UNSEAL_KEY" ] && [ -n "$ROOT_TOKEN" ]; then
+          echo "$UNSEAL_KEY" > "$KEYS_DIR/.unseal_key"
+          echo "$ROOT_TOKEN" > "$KEYS_DIR/.root_token"
+          echo "Initialized."
+        else
+          echo "Vault init did not return expected credentials."
+        fi
+      else
+        echo "$INIT_OUT"
+      fi
     fi
 
     UNSEAL_KEY=$(cat "$KEYS_DIR/.unseal_key" 2>/dev/null)
@@ -59,4 +68,3 @@ while true; do
 
   sleep 10
 done
-
