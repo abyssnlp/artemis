@@ -13,7 +13,7 @@ typecheck: .uv
 	@uv run pyright -p pyproject.toml
 
 launch-stack:
-	AIRFLOW_PROJ_DIR=./artemis @docker compose --profile flower up -d
+	AIRFLOW_PROJ_DIR=./artemis docker compose --profile flower up -d
 
 teardown:
 	@docker compose down
