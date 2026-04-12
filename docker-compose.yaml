@@ -80,6 +80,7 @@ x-airflow-common: &airflow-common
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ./dbt:/opt/airflow/dbt
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on: &airflow-common-depends-on
     redis:
@@ -168,7 +169,8 @@ services:
 
   airflow-worker:
     !!merge <<: *airflow-common
-    command: celery worker
+    command: celery worker -H celery@airflow-worker
+    hostname: airflow-worker
     healthcheck:
       # yamllint disable rule:line-length
       test:

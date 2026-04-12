@@ -9,10 +9,9 @@ from airflow.sdk import DAG, Variable
 
 default_args = {"owner": "shauryarawat", "start_date": datetime(2026, 4, 4, 0, 0, 0)}
 
-test_variable: str = Variable.get("airflow_env")
-
 
 def hello_world_loop():
+    test_variable: str = Variable.get("airflow_env")
     for word in ["hello", "world"]:
         print(word)
         print(test_variable)

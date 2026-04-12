@@ -1,0 +1,21 @@
+clickhouse:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      threads: 4
+      schema: default
+      host: localhost
+      port: 8123
+      user: default
+      password: test123
+      secure: False
+    docker:
+      type: clickhouse
+      threads: 4
+      schema: default
+      host: clickhouse
+      port: 8123
+      user: default
+      password: test123
+      secure: False

@@ -8,6 +8,9 @@ dependencies = [
     "apache-airflow==3.0.6",
     "apache-airflow-providers-hashicorp",
     "apache-airflow-providers-elasticsearch",
+    "dbt-core>=1.11.8",
+    "dbt-clickhouse>=1.10.0",
+    "astronomer-cosmos>=1.14.0",
 ]
 
 [build-system]
@@ -25,6 +28,8 @@ dev = [
     "codespell>=2.4.2",
     "pyright>=1.1.408",
     "ruff>=0.15.9",
+    "sqlfluff>=4.1.0",
+    "sqlfluff-templater-dbt>=4.1.0",
 ]
 
 [tool.ruff]
@@ -89,9 +94,31 @@ exclude = ["**/node_modules", "**/__pycache__", "**/.venv", "**/.pytest_cache", 
 enableExperimentalFeatures = true
 reportMissingImports = "error"
 reportMissingTypeStubs = false
+venvPath = "."
+venv = ".venv"
 pythonVersion = "3.12"
 pythonPlatform = "Linux"
 
 [tool.codespell]
-skip = ".git,.venv,dist,build,uv.lock,__pycache__,.pytest_cache,venv"
+skip = ".git,.venv,dist,build,uv.lock,__pycache__,.pytest_cache,venv,constraints-3.12.txt"
 ignore-words-list = "ser,deser"
+
+# SQLFluff
+[tool.sqlfluff.core]
+templater = "dbt"
+dialect = "clickhouse"
+sql_file_exts = ".sql,.sql.j2"
+
+[tool.sqlfluff.rules.references.keywords]
+ignore_words = "id"
+
+[tool.sqlfluff.rules.capitalisation.keywords]
+captalisation_policy = "upper"
+
+[tool.sqlfluff.templater.dbt]
+project_dir = "dbt/f1"
+profile = "clickhouse"
+target = "dev"
+
+[tool.sqlfluff.templater]
+unwrap_wrapped_queries = true
