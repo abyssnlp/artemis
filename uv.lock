@@ -328,8 +328,11 @@ dependencies = [
     { name = "apache-airflow-providers-elasticsearch" },
     { name = "apache-airflow-providers-hashicorp" },
     { name = "astronomer-cosmos" },
+    { name = "clickhouse-connect" },
     { name = "dbt-clickhouse" },
     { name = "dbt-core" },
+    { name = "pydantic" },
+    { name = "requests" },
 ]
 
 [package.dev-dependencies]
@@ -347,8 +350,11 @@ requires-dist = [
     { name = "apache-airflow-providers-elasticsearch" },
     { name = "apache-airflow-providers-hashicorp" },
     { name = "astronomer-cosmos", specifier = ">=1.14.0" },
+    { name = "clickhouse-connect", specifier = ">=0.15.1" },
     { name = "dbt-clickhouse", specifier = ">=1.10.0" },
     { name = "dbt-core", specifier = ">=1.11.8" },
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "requests", specifier = ">=2.33.1" },
 ]
 
 [package.metadata.requires-dev]

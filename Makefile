@@ -15,6 +15,9 @@ typecheck: .uv
 launch-stack:
 	AIRFLOW_PROJ_DIR=./artemis docker compose --profile flower up -d $(if $(BUILD),--build)
 
+f1-pool:
+	@docker compose exec artemis-airflow-apiserver-1 airflow pools set f1 4 "Pool for F1 related tasks"
+
 teardown:
 	@docker compose down
 

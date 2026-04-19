@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: f1
+    schema: raw
+    description: Raw data from the F1 API
+    tables:
+      - name: meetings
+        description: Information about F1 meetings
+      - name: sessions
+        description: Information about F1 sessions
+      - name: drivers
+        description: Information about F1 drivers
+      - name: laps
+        description: Information about laps in F1 sessions
+      - name: stints
+        description: Information about stints in F1 sessions

@@ -61,7 +61,7 @@ while true; do
 
       vault kv get secret/connections/clickhouse_default > /dev/null 2>&1 || \
         vault kv put secret/connections/clickhouse_default \
-          conn_uri="clickhouse://default:test123@clickhouse:9000/default"
+          conn_uri="clickhouse://default:test123@clickhouse:8123/default"
 
       vault kv get secret/variables/airflow_env > /dev/null 2>&1 || \
         vault kv put secret/variables/airflow_env value=development

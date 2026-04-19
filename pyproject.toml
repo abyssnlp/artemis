@@ -11,6 +11,9 @@ dependencies = [
     "dbt-core>=1.11.8",
     "dbt-clickhouse>=1.10.0",
     "astronomer-cosmos>=1.14.0",
+    "requests>=2.33.1",
+    "clickhouse-connect>=0.15.1",
+    "pydantic>=2.12.5",
 ]
 
 [build-system]

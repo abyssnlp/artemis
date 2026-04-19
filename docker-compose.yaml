@@ -289,6 +289,7 @@ services:
         echo "Files in shared volumes:"
         echo
         ls -la /opt/airflow/{logs,dags,plugins,config}
+        /entrypoint airflow pools set f1 4 "Pool for F1 related tasks"
 
     # yamllint enable rule:line-length
     environment:
@@ -500,6 +501,8 @@ services:
       - ./clickhouse/config/users.xml:/etc/clickhouse-server/users.d/docker.xml:ro
     environment:
       CLICKHOUSE_DB: analytics
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: test123
     ulimits:
       nofile:
         soft: 262144
