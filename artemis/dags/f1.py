@@ -8,6 +8,7 @@ from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import DAG
 from airflow.utils.trigger_rule import TriggerRule
 from common.components.f1_ingest import F1IngestOperator, ensure_raw_tables
+from common.components.f1_validate import F1ValidateOperator
 
 default_args = {
     "owner": "shauryarawat",
@@ -32,6 +33,7 @@ with DAG(dag_id="f1", default_args=default_args, schedule="@once") as dag:
 
     endpoints = ["meetings", "sessions", "drivers", "laps", "stints"]
     ingest_tasks = []
+    validate_tasks = []
 
     for endpoint in endpoints:
         ingest_task = F1IngestOperator(
@@ -44,8 +46,24 @@ with DAG(dag_id="f1", default_args=default_args, schedule="@once") as dag:
             extra_params={"year": 2026} if endpoint == "meetings" else {},
             pool="f1",
         )
+
+        validate_task = F1ValidateOperator(
+            task_id=f"validate_{endpoint}",
+            conn_id="clickhouse_default",
+            endpoint=endpoint,
+            database=DATABASE_NAME,
+            table=endpoint,
+            batch_size=1_000,
+            max_logged_errors=10,
+            failure_threshold=100,
+            strict=False,
+        )
+
+        ingest_task >> validate_task  # type: ignore
         ingest_tasks.append(ingest_task)
+        validate_tasks.append(validate_task)
 
     test_end = EmptyOperator(task_id="test_end", trigger_rule=TriggerRule.ALL_SUCCESS)
 
-test_start >> setup_raw_tables >> ingest_tasks >> test_end  # type: ignore
+test_start >> setup_raw_tables >> ingest_tasks  # type: ignore
+validate_tasks >> test_end  # type: ignore
