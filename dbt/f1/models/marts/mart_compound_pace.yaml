@@ -1,0 +1,26 @@
+models:
+  - name: mart_compound_pace
+    description: "Per-compound pace summary per session. Aggregated over clean laps (excludes pit-out laps and laps with no recorded duration)."
+    columns:
+      - name: session_key
+        description: "Session identifier"
+        data_tests:
+          - not_null
+      - name: compound
+        description: "Tyre compound (SOFT, MEDIUM, HARD, INTERMEDIATE, WET)"
+        data_tests:
+          - not_null
+      - name: year
+        description: "Championship year"
+      - name: circuit_name
+        description: "Short name of the circuit"
+      - name: session_type
+        description: "Type of session (Practice, Qualifying, Race)"
+      - name: sample_size
+        description: "Number of clean laps used in the aggregation"
+      - name: fastest_lap
+        description: "Fastest clean lap on this compound in seconds"
+      - name: avg_lap_duration
+        description: "Mean clean lap duration on this compound in seconds"
+      - name: stddev_lap
+        description: "Sample standard deviation of lap durations on this compound in seconds"

@@ -1,0 +1,36 @@
+models:
+  - name: mart_driver_pace
+    description: "Per-driver pace summary per session. Aggregated over clean laps (excludes pit-out laps and laps with no recorded duration)."
+    columns:
+      - name: session_key
+        description: "Session identifier"
+        data_tests:
+          - not_null
+      - name: driver_number
+        description: "Driver's car number"
+        data_tests:
+          - not_null
+      - name: name_acronym
+        description: "Three-letter driver acronym"
+      - name: team_name
+        description: "Constructor team name"
+      - name: year
+        description: "Championship year"
+      - name: circuit_name
+        description: "Short name of the circuit"
+      - name: session_type
+        description: "Type of session (Practice, Qualifying, Race)"
+      - name: lap_count
+        description: "Number of clean laps included in the aggregation"
+      - name: fastest_lap
+        description: "Fastest clean lap duration in seconds"
+      - name: median_lap
+        description: "Median clean lap duration in seconds"
+      - name: stddev_lap
+        description: "Sample standard deviation of clean lap durations in seconds"
+      - name: best_sector_1
+        description: "Best sector 1 duration across all clean laps in seconds"
+      - name: best_sector_2
+        description: "Best sector 2 duration across all clean laps in seconds"
+      - name: best_sector_3
+        description: "Best sector 3 duration across all clean laps in seconds"

@@ -79,6 +79,24 @@ with DAG(dag_id="f1", default_args=default_args, schedule="@once") as dag:
         operator_args={"install_deps": True},
     )
 
+    intermediate = DbtTaskGroup(
+        group_id="intermediate_f1",
+        project_config=get_project_config("f1"),
+        render_config=get_render_config(select=["path:models/intermediate"]),
+        execution_config=EXECUTION_CONFIG,
+        profile_config=PROFILE_CONFIG,
+        operator_args={"install_deps": True},
+    )
+
+    marts = DbtTaskGroup(
+        group_id="marts_f1",
+        project_config=get_project_config("f1"),
+        render_config=get_render_config(select=["path:models/marts"]),
+        execution_config=EXECUTION_CONFIG,
+        profile_config=PROFILE_CONFIG,
+        operator_args={"install_deps": True},
+    )
+
     all_validated = EmptyOperator(
         task_id="all_validated",
         trigger_rule=TriggerRule.ALL_SUCCESS,
@@ -87,4 +105,4 @@ with DAG(dag_id="f1", default_args=default_args, schedule="@once") as dag:
     test_end = EmptyOperator(task_id="test_end", trigger_rule=TriggerRule.ALL_SUCCESS)
 
     test_start >> setup_raw_tables >> ingest_tasks  # type: ignore
-    validate_tasks >> all_validated >> staging >> test_end  # type: ignore
+    validate_tasks >> all_validated >> staging >> intermediate >> marts >> test_end  # type: ignore

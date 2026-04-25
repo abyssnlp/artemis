@@ -1,0 +1,50 @@
+models:
+  - name: int_laps_with_stint
+    description: "Laps enriched with stint context. Each lap is joined to its containing stint on session, driver, and lap number falling within [lap_start, lap_end]. Laps with no matching stint are excluded (ClickHouse does not support range conditions in JOIN ON; the range is applied as a WHERE filter)."
+    columns:
+      - name: session_key
+        description: "Foreign key to the sessions table"
+        data_tests:
+          - not_null
+      - name: driver_number
+        description: "Driver's car number"
+        data_tests:
+          - not_null
+      - name: lap_number
+        description: "Lap number within the session"
+        data_tests:
+          - not_null
+      - name: meeting_key
+        description: "Foreign key to the meetings table"
+        data_tests:
+          - not_null
+      - name: date_start
+        description: "Timestamp when the lap started"
+      - name: duration_sector_1
+        description: "Duration of sector 1 in seconds"
+      - name: duration_sector_2
+        description: "Duration of sector 2 in seconds"
+      - name: duration_sector_3
+        description: "Duration of sector 3 in seconds"
+      - name: i1_speed
+        description: "Speed at intermediate 1 in km/h"
+      - name: i2_speed
+        description: "Speed at intermediate 2 in km/h"
+      - name: is_pit_out_lap
+        description: "Whether the lap is an out lap from the pit"
+      - name: lap_duration
+        description: "Total lap duration in seconds"
+      - name: segments_sector_1
+        description: "Mini-sector segment flags for sector 1"
+      - name: segments_sector_2
+        description: "Mini-sector segment flags for sector 2"
+      - name: segments_sector_3
+        description: "Mini-sector segment flags for sector 3"
+      - name: st_speed
+        description: "Speed trap reading on the main straight in km/h"
+      - name: stint_number
+        description: "Sequential stint number for the driver within the session"
+      - name: compound
+        description: "Tyre compound in use during this lap (e.g., SOFT, MEDIUM, HARD)"
+      - name: tyre_age
+        description: "Age of the tyre in laps at the time of this lap (tyre_age_at_start + lap_number - lap_start)"

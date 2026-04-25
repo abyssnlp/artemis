@@ -1,0 +1,38 @@
+models:
+  - name: mart_degradation
+    description: "Tyre degradation rate per driver per stint. Uses simple linear regression (lap_duration ~ tyre_age) to estimate pace loss per lap of tyre age. Requires at least 2 clean laps per stint."
+    columns:
+      - name: session_key
+        description: "Session identifier"
+        data_tests:
+          - not_null
+      - name: driver_number
+        description: "Driver's car number"
+        data_tests:
+          - not_null
+      - name: name_acronym
+        description: "Three-letter driver acronym"
+      - name: team_name
+        description: "Constructor team name"
+      - name: stint_number
+        description: "Sequential stint number within the session"
+        data_tests:
+          - not_null
+      - name: compound
+        description: "Tyre compound used during the stint"
+        data_tests:
+          - not_null
+      - name: year
+        description: "Championship year"
+      - name: circuit_name
+        description: "Short name of the circuit"
+      - name: session_type
+        description: "Type of session (Practice, Qualifying, Race)"
+      - name: lap_count
+        description: "Number of clean laps in this stint used for regression"
+      - name: best_lap
+        description: "Fastest clean lap in the stint in seconds"
+      - name: avg_lap
+        description: "Mean clean lap duration in the stint in seconds"
+      - name: degradation_slope
+        description: "Seconds of pace loss per additional lap of tyre age (slope of lap_duration ~ tyre_age regression). Positive = pace gets worse with age."

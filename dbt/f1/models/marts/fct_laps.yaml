@@ -1,0 +1,64 @@
+models:
+  - name: fct_laps
+    description: "Lap-grain fact table. Denormalized with driver, session, and meeting context for star-schema consumption."
+    columns:
+      - name: meeting_key
+        description: "Foreign key to meetings"
+        data_tests:
+          - not_null
+      - name: session_key
+        description: "Foreign key to sessions"
+        data_tests:
+          - not_null
+      - name: driver_number
+        description: "Driver's car number"
+        data_tests:
+          - not_null
+      - name: lap_number
+        description: "Lap number within the session"
+        data_tests:
+          - not_null
+      - name: date_start
+        description: "Timestamp when the lap started"
+      - name: lap_duration
+        description: "Total lap duration in seconds. NULL for incomplete laps."
+      - name: duration_sector_1
+        description: "Duration of sector 1 in seconds"
+      - name: duration_sector_2
+        description: "Duration of sector 2 in seconds"
+      - name: duration_sector_3
+        description: "Duration of sector 3 in seconds"
+      - name: i1_speed
+        description: "Speed at intermediate 1 in km/h"
+      - name: i2_speed
+        description: "Speed at intermediate 2 in km/h"
+      - name: st_speed
+        description: "Speed trap reading on the main straight in km/h"
+      - name: is_pit_out_lap
+        description: "Whether the lap is an out lap from the pit"
+      - name: stint_number
+        description: "Sequential stint number for the driver within the session"
+      - name: compound
+        description: "Tyre compound in use during this lap"
+      - name: tyre_age
+        description: "Age of the tyre in laps at the time of this lap"
+      - name: name_acronym
+        description: "Three-letter driver acronym"
+      - name: full_name
+        description: "Driver's full name"
+      - name: team_name
+        description: "Constructor team name"
+      - name: team_colour
+        description: "Hex colour code of the team"
+      - name: session_name
+        description: "Name of the session"
+      - name: session_type
+        description: "Type of session (Practice, Qualifying, Race)"
+      - name: meeting_name
+        description: "Name of the Grand Prix meeting"
+      - name: location
+        description: "Circuit location city"
+      - name: circuit_name
+        description: "Short name of the circuit"
+      - name: year
+        description: "Championship year"
