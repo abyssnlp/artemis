@@ -10,3 +10,18 @@ datasources:
     editable: false
     jsonData:
       timeInterval: "15s"
+
+  - name: ClickHouse
+    type: grafana-clickhouse-datasource
+    uid: clickhouse
+    access: proxy
+    editable: false
+    jsonData:
+      host: clickhouse
+      port: 8123
+      username: default
+      defaultDatabase: default
+      protocol: http
+      secure: false
+    secureJsonData:
+      password: test123
