@@ -9,12 +9,13 @@
   "links": [],
   "schemaVersion": 39,
   "tags": [
-    "f1"
+    "f1",
+    "race-analysis"
   ],
   "timezone": "browser",
   "title": "F1 Race Analysis",
   "uid": "f1-race-analysis",
-  "version": 1,
+  "version": 5,
   "weekStart": "",
   "time": {
     "from": "now-2y",
@@ -30,14 +31,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "definition": "SELECT toString(session_key) AS __value, concat(toString(year), ' ', circuit_name, ' - ', session_type) AS __text FROM default.mart_driver_pace GROUP BY session_key, year, circuit_name, session_type ORDER BY year DESC, session_key DESC",
+        "name": "session_key",
+        "label": "Session",
+        "definition": "SELECT toString(session_key) AS __value, concat(toString(year), ' ', circuit_name, ' - ', session_type) AS __text FROM default.mart_driver_pace GROUP BY session_key, year, circuit_name, session_type ORDER BY session_key DESC",
+        "query": "SELECT toString(session_key) AS __value, concat(toString(year), ' ', circuit_name, ' - ', session_type) AS __text FROM default.mart_driver_pace GROUP BY session_key, year, circuit_name, session_type ORDER BY session_key DESC",
         "hide": 0,
         "includeAll": false,
         "multi": false,
-        "name": "session_key",
-        "label": "Session",
         "options": [],
-        "query": "SELECT toString(session_key) AS __value, concat(toString(year), ' ', circuit_name, ' - ', session_type) AS __text FROM default.mart_driver_pace GROUP BY session_key, year, circuit_name, session_type ORDER BY year DESC, session_key DESC",
         "refresh": 1,
         "regex": "",
         "sort": 0,
@@ -49,14 +50,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "definition": "SELECT toString(driver_number) AS __value, concat(name_acronym, ' #', toString(driver_number)) AS __text FROM default.mart_driver_pace WHERE session_key = ${session_key} GROUP BY driver_number, name_acronym ORDER BY name_acronym",
+        "name": "driver_acronym",
+        "label": "Driver (focus)",
+        "definition": "SELECT name_acronym AS __value, name_acronym AS __text FROM default.mart_driver_pace WHERE session_key = ${session_key} GROUP BY name_acronym ORDER BY name_acronym",
+        "query": "SELECT name_acronym AS __value, name_acronym AS __text FROM default.mart_driver_pace WHERE session_key = ${session_key} GROUP BY name_acronym ORDER BY name_acronym",
         "hide": 0,
         "includeAll": false,
         "multi": false,
-        "name": "driver_number",
-        "label": "Driver",
         "options": [],
-        "query": "SELECT toString(driver_number) AS __value, concat(name_acronym, ' #', toString(driver_number)) AS __text FROM default.mart_driver_pace WHERE session_key = ${session_key} GROUP BY driver_number, name_acronym ORDER BY name_acronym",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -66,33 +67,267 @@
   },
   "panels": [
     {
-      "id": 1,
-      "title": "Lap Time Trace",
-      "description": "Lap duration per driver across the session. Pit-out laps and laps with no recorded time are excluded.",
-      "type": "timeseries",
+      "id": 101,
+      "title": "Best Lap \u2014 ${driver_acronym}",
+      "description": "Single fastest lap time of the session and the driver who set it.",
+      "type": "stat",
       "gridPos": {
-        "h": 9,
-        "w": 24,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "w": 8,
+        "h": 4
       },
       "datasource": {
         "type": "grafana-clickhouse-datasource",
         "uid": "clickhouse"
       },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 1,
+          "queryType": "sql",
+          "rawSql": "SELECT concat('${driver_acronym} \u2014 ', toString(round(min(lap_duration),3)), 's') AS fastest_lap\n       FROM default.fct_laps\n       WHERE session_key = ${session_key}\n         AND name_acronym = '${driver_acronym}'\n         AND lap_duration IS NOT NULL AND is_pit_out_lap = 0",
+          "refId": "A",
+          "meta": {
+            "builderOptions": {
+              "queryType": "table",
+              "database": "default",
+              "table": "fct_laps"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "showPercentChange": false,
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 102,
+      "title": "Top Speed \u2014 ${driver_acronym}",
+      "description": "Highest speed recorded at the speed-trap line and the driver who set it.",
+      "type": "stat",
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 1,
+          "queryType": "sql",
+          "rawSql": "SELECT max(st_speed) AS top_speed_kmh\n       FROM default.fct_laps\n       WHERE session_key = ${session_key}\n         AND name_acronym = '${driver_acronym}'\n         AND st_speed > 0",
+          "refId": "A",
+          "meta": {
+            "builderOptions": {
+              "queryType": "table",
+              "database": "default",
+              "table": "fct_laps"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "showPercentChange": false,
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 103,
+      "title": "Laps & Stints \u2014 ${driver_acronym}",
+      "description": "Number of drivers and total racing laps captured for this session.",
+      "type": "stat",
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 1,
+          "queryType": "sql",
+          "rawSql": "SELECT concat('${driver_acronym}: ', toString(count()), ' laps / ',\n                  toString(uniq(stint_number)), ' stints') AS summary\n       FROM default.fct_laps\n       WHERE session_key = ${session_key}\n         AND name_acronym = '${driver_acronym}'",
+          "refId": "A",
+          "meta": {
+            "builderOptions": {
+              "queryType": "table",
+              "database": "default",
+              "table": "fct_laps"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "showPercentChange": false,
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 201,
+      "title": "Race Trace: ${driver_acronym} Gap to Leader",
+      "description": "Cumulative race time minus the leader's cumulative race time at every lap. Lower = closer to the front. Sharp upward spikes are pit stops; slow climbs reveal pace deficits.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 11
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 2,
+          "queryType": "sql",
+          "rawSql": "WITH cum AS (\n         SELECT driver_number, name_acronym, lap_number, date_start,\n                sum(lap_duration) OVER (PARTITION BY driver_number ORDER BY lap_number) AS cum_time\n         FROM default.fct_laps\n         WHERE session_key = ${session_key} AND lap_duration IS NOT NULL\n       ),\n       leader AS (\n         SELECT lap_number, min(cum_time) AS leader_time FROM cum GROUP BY lap_number\n       )\n       SELECT cum.date_start AS time,\n              cum.cum_time - leader.leader_time AS gap,\n              cum.name_acronym AS metric\n       FROM cum\n       LEFT JOIN leader ON cum.lap_number = leader.lap_number\n       WHERE cum.name_acronym = '${driver_acronym}'\n       ORDER BY time",
+          "refId": "A",
+          "meta": {
+            "builderOptions": {
+              "queryType": "table",
+              "database": "default",
+              "table": "fct_laps"
+            }
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
+          "unit": "s",
+          "decimals": 1,
           "custom": {
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
+            "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 4,
-            "showPoints": "auto",
-            "spanNulls": false,
-            "fillOpacity": 5,
+            "showPoints": "never",
+            "spanNulls": true,
+            "fillOpacity": 0,
             "gradientMode": "none",
             "stacking": {
               "mode": "none",
@@ -101,7 +336,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Lap time (s)",
+            "axisLabel": "Gap to leader (s)",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "hideFrom": {
@@ -117,8 +352,6 @@
               "mode": "off"
             }
           },
-          "unit": "s",
-          "decimals": 3,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -135,17 +368,32 @@
       "options": {
         "legend": {
           "calcs": [
-            "min",
-            "mean"
+            "last"
           ],
           "displayMode": "table",
-          "placement": "bottom",
+          "placement": "right",
           "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
           "sort": "asc"
         }
+      }
+    },
+    {
+      "id": 301,
+      "title": "Stint Strategy \u2014 ${driver_acronym}",
+      "type": "table",
+      "description": "Compound, lap range, length and average pace for every stint of every driver. Cells coloured by tyre compound. Reads strategy at a glance: 1-stop vs 2-stop vs aggressive multi-stop, and which compound delivered which pace.",
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 11
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
       },
       "targets": [
         {
@@ -153,62 +401,31 @@
             "type": "grafana-clickhouse-datasource",
             "uid": "clickhouse"
           },
-          "format": 2,
+          "format": 1,
+          "queryType": "sql",
+          "rawSql": "SELECT name_acronym AS Driver,\n                  stint_number  AS Stint,\n                  compound      AS Compound,\n                  min(lap_number) AS LapStart,\n                  max(lap_number) AS LapEnd,\n                  count()         AS Laps,\n                  round(avg(lap_duration), 3) AS AvgPace,\n                  round(min(lap_duration), 3) AS BestLap\n           FROM default.fct_laps\n           WHERE session_key = ${session_key}\n             AND name_acronym = '${driver_acronym}'\n             AND is_pit_out_lap = 0 AND lap_duration IS NOT NULL\n           GROUP BY name_acronym, driver_number, stint_number, compound\n           ORDER BY stint_number ASC",
+          "refId": "A",
           "meta": {
             "builderOptions": {
               "queryType": "table",
               "database": "default",
               "table": "fct_laps"
             }
-          },
-          "queryType": "sql",
-          "rawSql": "SELECT date_start AS time, lap_duration, name_acronym AS metric FROM default.fct_laps WHERE session_key = ${session_key} AND lap_duration IS NOT NULL AND is_pit_out_lap = 0 ORDER BY time",
-          "refId": "A"
+          }
         }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Driver Pace Comparison",
-      "description": "Fastest and median lap per driver. Error bars show standard deviation. Clean laps only.",
-      "type": "barchart",
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 9
-      },
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "clickhouse"
-      },
+      ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "custom": {
-            "axisBorderShow": false,
-            "axisColorMode": "text",
-            "axisLabel": "Lap time (s)",
-            "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
             },
-            "lineWidth": 1,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "inspect": false
           },
-          "unit": "s",
-          "decimals": 3,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -224,42 +441,118 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "stddev_lap"
+              "options": "Compound"
             },
             "properties": [
               {
-                "id": "custom.hideFrom",
+                "id": "custom.cellOptions",
                 "value": {
-                  "legend": false,
-                  "tooltip": true,
-                  "viz": true
+                  "type": "color-background",
+                  "mode": "basic"
                 }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "SOFT": {
+                        "color": "red",
+                        "index": 0,
+                        "text": "SOFT"
+                      },
+                      "MEDIUM": {
+                        "color": "yellow",
+                        "index": 1,
+                        "text": "MEDIUM"
+                      },
+                      "HARD": {
+                        "color": "white",
+                        "index": 2,
+                        "text": "HARD"
+                      },
+                      "INTERMEDIATE": {
+                        "color": "green",
+                        "index": 3,
+                        "text": "INTERMEDIATE"
+                      },
+                      "WET": {
+                        "color": "blue",
+                        "index": 4,
+                        "text": "WET"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "AvgPace"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "BestLap"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 3
               }
             ]
           }
         ]
       },
       "options": {
-        "barRadius": 0.05,
-        "barWidth": 0.7,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ]
         },
-        "orientation": "auto",
-        "showValue": "never",
-        "stacking": "none",
-        "tooltip": {
-          "mode": "multi",
-          "sort": "asc"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0,
-        "colorByField": "name_acronym"
+        "sortBy": [
+          {
+            "displayName": "Driver",
+            "desc": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 401,
+      "title": "Tyre Degradation \u2014 ${driver_acronym} (pace vs tyre age)",
+      "description": "Average lap time at each tyre age, grouped by compound. Reveals the actual cliff: where each compound starts losing seconds. Steeper rise = faster degradation. Flat = consistent.",
+      "type": "barchart",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 12,
+        "h": 10
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
       },
       "targets": [
         {
@@ -268,43 +561,29 @@
             "uid": "clickhouse"
           },
           "format": 1,
+          "queryType": "sql",
+          "rawSql": "SELECT tyre_age,\n              avgIf(lap_duration, compound = 'SOFT')         AS SOFT,\n              avgIf(lap_duration, compound = 'MEDIUM')       AS MEDIUM,\n              avgIf(lap_duration, compound = 'HARD')         AS HARD,\n              avgIf(lap_duration, compound = 'INTERMEDIATE') AS INTERMEDIATE,\n              avgIf(lap_duration, compound = 'WET')          AS WET\n         FROM default.fct_laps\n         WHERE session_key = ${session_key}\n           AND name_acronym = '${driver_acronym}'\n           AND lap_duration IS NOT NULL AND is_pit_out_lap = 0 AND tyre_age < 50\n         GROUP BY tyre_age ORDER BY tyre_age",
+          "refId": "A",
           "meta": {
             "builderOptions": {
               "queryType": "table",
               "database": "default",
-              "table": "mart_driver_pace"
+              "table": "fct_laps"
             }
-          },
-          "queryType": "sql",
-          "rawSql": "SELECT name_acronym, fastest_lap, median_lap, stddev_lap FROM default.mart_driver_pace WHERE session_key = ${session_key} ORDER BY median_lap ASC",
-          "refId": "A"
+          }
         }
-      ]
-    },
-    {
-      "id": 3,
-      "title": "Compound Pace Delta",
-      "description": "Average and fastest lap time per tyre compound. Sample size shown in tooltip.",
-      "type": "barchart",
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 9
-      },
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "clickhouse"
-      },
+      ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "fixed"
+            "mode": "palette-classic"
           },
+          "unit": "s",
+          "decimals": 2,
           "custom": {
             "axisBorderShow": false,
             "axisColorMode": "text",
-            "axisLabel": "Lap time (s)",
+            "axisLabel": "Avg lap time (s)",
             "axisPlacement": "auto",
             "fillOpacity": 80,
             "gradientMode": "none",
@@ -321,8 +600,6 @@
               "mode": "off"
             }
           },
-          "unit": "s",
-          "decimals": 3,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -344,8 +621,8 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
+                  "mode": "fixed",
+                  "fixedColor": "red"
                 }
               }
             ]
@@ -359,8 +636,8 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
                 }
               }
             ]
@@ -374,8 +651,8 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "white",
-                  "mode": "fixed"
+                  "mode": "fixed",
+                  "fixedColor": "white"
                 }
               }
             ]
@@ -389,8 +666,8 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
+                  "mode": "fixed",
+                  "fixedColor": "green"
                 }
               }
             ]
@@ -404,137 +681,8 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sample_size"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "barRadius": 0.05,
-        "barWidth": 0.6,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "orientation": "auto",
-        "showValue": "never",
-        "stacking": "none",
-        "tooltip": {
-          "mode": "multi",
-          "sort": "asc"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "clickhouse"
-          },
-          "format": 1,
-          "meta": {
-            "builderOptions": {
-              "queryType": "table",
-              "database": "default",
-              "table": "mart_compound_pace"
-            }
-          },
-          "queryType": "sql",
-          "rawSql": "SELECT compound, fastest_lap, avg_lap_duration, sample_size FROM default.mart_compound_pace WHERE session_key = ${session_key} ORDER BY avg_lap_duration ASC",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "Tyre Degradation Rate",
-      "description": "Linear regression slope of lap_duration ~ tyre_age per driver per stint (seconds lost per lap of tyre age). Higher = faster degradation.",
-      "type": "barchart",
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 18
-      },
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "clickhouse"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisColorMode": "text",
-            "axisLabel": "Degradation (s / lap)",
-            "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineWidth": 1,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "unit": "s",
-          "decimals": 3,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "lap_count"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
+                  "mode": "fixed",
+                  "fixedColor": "blue"
                 }
               }
             ]
@@ -545,7 +693,7 @@
         "barRadius": 0.05,
         "barWidth": 0.7,
         "fullHighlight": false,
-        "groupWidth": 0.7,
+        "groupWidth": 0.8,
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -559,8 +707,25 @@
           "mode": "multi",
           "sort": "desc"
         },
-        "xTickLabelRotation": -45,
-        "xTickLabelSpacing": 100
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "xField": "tyre_age"
+      }
+    },
+    {
+      "id": 402,
+      "title": "Lap Times \u2014 ${driver_acronym} with 3-lap rolling avg",
+      "description": "Per-driver median clean-lap pace with the 5-95th percentile range as a secondary metric. Median is true race pace (immune to outliers); spread quantifies consistency. Sorted fastest median to slowest.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 26,
+        "w": 12,
+        "h": 10
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
       },
       "targets": [
         {
@@ -568,48 +733,228 @@
             "type": "grafana-clickhouse-datasource",
             "uid": "clickhouse"
           },
-          "format": 1,
+          "format": 0,
+          "queryType": "sql",
+          "rawSql": "SELECT date_start AS time,\n              lap_number,\n              round(lap_duration, 3) AS lap_time,\n              round(avg(lap_duration) OVER (ORDER BY lap_number ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 3) AS rolling_avg_3\n         FROM default.fct_laps\n         WHERE session_key = ${session_key}\n           AND name_acronym = '${driver_acronym}'\n           AND lap_duration IS NOT NULL AND is_pit_out_lap = 0\n         ORDER BY time",
+          "refId": "A",
           "meta": {
             "builderOptions": {
               "queryType": "table",
               "database": "default",
-              "table": "mart_degradation"
+              "table": "fct_laps"
             }
-          },
-          "queryType": "sql",
-          "rawSql": "SELECT concat(name_acronym, ' S', toString(stint_number), ' (', compound, ')') AS driver_stint, degradation_slope, lap_count FROM default.mart_degradation WHERE session_key = ${session_key} ORDER BY degradation_slope DESC",
-          "refId": "A"
+          }
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 5,
+            "spanNulls": true
+          },
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_avg_3"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
-      "id": 5,
-      "title": "Stint Pace Evolution",
-      "description": "Lap times across the session coloured by stint for the selected driver. Shows pace cliff and tyre performance window.",
+      "id": 501,
+      "title": "Sector Breakdown \u2014 ${driver_acronym} per Lap",
+      "description": "How often each driver was the fastest in each sector across the race. Drivers who win sectors but rarely the lap reveal where their car excels (e.g. high-speed S1 vs slow corner S3).",
       "type": "timeseries",
       "gridPos": {
-        "h": 9,
+        "x": 0,
+        "y": 36,
         "w": 12,
-        "x": 12,
-        "y": 18
+        "h": 10
       },
       "datasource": {
         "type": "grafana-clickhouse-datasource",
         "uid": "clickhouse"
       },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 0,
+          "queryType": "sql",
+          "rawSql": "SELECT date_start AS time,\n              lap_number,\n              round(duration_sector_1, 3) AS sector_1,\n              round(duration_sector_2, 3) AS sector_2,\n              round(duration_sector_3, 3) AS sector_3\n         FROM default.fct_laps\n         WHERE session_key = ${session_key}\n           AND name_acronym = '${driver_acronym}'\n           AND duration_sector_1 > 0 AND duration_sector_2 > 0 AND duration_sector_3 > 0\n           AND is_pit_out_lap = 0\n         ORDER BY time",
+          "refId": "A",
+          "meta": {
+            "builderOptions": {
+              "queryType": "table",
+              "database": "default",
+              "table": "fct_laps"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 502,
+      "title": "Speed Trap \u2014 ${driver_acronym} per Lap",
+      "description": "Highest end-of-straight speed reached by each driver. Indicates straight-line efficiency: low downforce setups, slipstream usage, DRS effectiveness, and engine power.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 36,
+        "w": 12,
+        "h": 10
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 0,
+          "queryType": "sql",
+          "rawSql": "SELECT date_start AS time,\n              lap_number,\n              i1_speed,\n              i2_speed,\n              st_speed AS speed_trap\n         FROM default.fct_laps\n         WHERE session_key = ${session_key}\n           AND name_acronym = '${driver_acronym}'\n           AND st_speed > 0\n         ORDER BY time",
+          "refId": "A",
+          "meta": {
+            "builderOptions": {
+              "queryType": "table",
+              "database": "default",
+              "table": "fct_laps"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 5,
+            "spanNulls": false
+          },
+          "unit": "velocitykmh"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 601,
+      "title": "Selected Driver (${driver_acronym}) vs Race Leader - Lap-by-Lap",
+      "description": "Lap times of the focus driver (selected via dropdown) overlaid against the lap time of the race leader at that same lap. Highlights traffic, mistakes, undercut/overcut moments, and stint pace deltas.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 60,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 2,
+          "queryType": "sql",
+          "rawSql": "WITH leader_per_lap AS (\n         SELECT lap_number, min(lap_duration) AS leader_lap\n         FROM default.fct_laps\n         WHERE session_key = ${session_key} AND lap_duration IS NOT NULL AND is_pit_out_lap = 0\n         GROUP BY lap_number\n       )\n       SELECT f.date_start AS time,\n              f.lap_duration AS focus_driver,\n              l.leader_lap   AS race_leader_pace\n       FROM default.fct_laps f\n       LEFT JOIN leader_per_lap l ON f.lap_number = l.lap_number\n       WHERE f.session_key = ${session_key}\n         AND f.name_acronym = '${driver_acronym}'\n         AND f.lap_duration IS NOT NULL\n         AND f.is_pit_out_lap = 0\n       ORDER BY time",
+          "refId": "A",
+          "meta": {
+            "builderOptions": {
+              "queryType": "table",
+              "database": "default",
+              "table": "fct_laps"
+            }
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
+          "unit": "s",
+          "decimals": 3,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
+            "pointSize": 4,
             "showPoints": "always",
-            "spanNulls": false,
-            "fillOpacity": 8,
+            "spanNulls": true,
+            "fillOpacity": 10,
             "gradientMode": "none",
             "stacking": {
               "mode": "none",
@@ -634,8 +979,6 @@
               "mode": "off"
             }
           },
-          "unit": "s",
-          "decimals": 3,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -656,109 +999,28 @@
             "mean"
           ],
           "displayMode": "table",
-          "placement": "bottom",
+          "placement": "right",
           "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
           "sort": "asc"
         }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "clickhouse"
-          },
-          "format": 2,
-          "meta": {
-            "builderOptions": {
-              "queryType": "table",
-              "database": "default",
-              "table": "fct_laps"
-            }
-          },
-          "queryType": "sql",
-          "rawSql": "SELECT date_start AS time, lap_duration, concat('S', toString(stint_number), ' - ', compound) AS metric FROM default.fct_laps WHERE session_key = ${session_key} AND driver_number = ${driver_number} AND lap_duration IS NOT NULL AND is_pit_out_lap = 0 ORDER BY time",
-          "refId": "A"
-        }
-      ]
+      }
     },
     {
-      "id": 6,
-      "title": "Theoretical vs Actual Best Lap (Sector Contribution)",
-      "description": "Sum of individual sector bests (theoretical perfect lap) vs recorded fastest lap. The gap shows how rarely all three sectors were combined.",
-      "type": "barchart",
+      "id": 701,
+      "title": "Selected Driver: ${driver_acronym} - Race Summary",
+      "type": "stat",
       "gridPos": {
-        "h": 9,
-        "w": 24,
         "x": 0,
-        "y": 27
+        "y": 56,
+        "w": 24,
+        "h": 4
       },
       "datasource": {
         "type": "grafana-clickhouse-datasource",
         "uid": "clickhouse"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisColorMode": "text",
-            "axisLabel": "Time (s)",
-            "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineWidth": 1,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "unit": "s",
-          "decimals": 3,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "barRadius": 0.05,
-        "barWidth": 0.7,
-        "fullHighlight": false,
-        "groupWidth": 0.8,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "orientation": "auto",
-        "showValue": "never",
-        "stacking": "none",
-        "tooltip": {
-          "mode": "multi",
-          "sort": "asc"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
       },
       "targets": [
         {
@@ -767,18 +1029,41 @@
             "uid": "clickhouse"
           },
           "format": 1,
-          "meta": {
-            "builderOptions": {
-              "queryType": "table",
-              "database": "default",
-              "table": "mart_driver_pace"
-            }
-          },
-          "queryType": "sql",
-          "rawSql": "SELECT name_acronym, fastest_lap, best_sector_1 + best_sector_2 + best_sector_3 AS theoretical_best FROM default.mart_driver_pace WHERE session_key = ${session_key} ORDER BY fastest_lap ASC",
-          "refId": "A"
+          "refId": "A",
+          "rawSql": "SELECT round(min(lap_duration), 3) AS \"Best Lap (s)\", round(median(lap_duration), 3) AS \"Median Pace (s)\", max(i1_speed) AS \"Top I1 (km/h)\", max(st_speed) AS \"Top Trap (km/h)\", uniq(stint_number) AS \"Stints\", count() AS \"Laps Completed\" FROM default.fct_laps WHERE session_key = ${session_key} AND name_acronym = '${driver_acronym}' AND lap_duration IS NOT NULL AND is_pit_out_lap = 0"
         }
-      ]
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
     }
   ]
 }
