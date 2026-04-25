@@ -1,0 +1,52 @@
+models:
+  - name: stg_laps
+    description: "Staging table for lap-level timing data"
+    columns:
+      - name: meeting_key
+        description: "Foreign key to the meetings table"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_meetings')
+              field: meeting_key
+      - name: session_key
+        description: "Foreign key to the sessions table"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_sessions')
+              field: session_key
+      - name: driver_number
+        description: "Driver's car number"
+        data_tests:
+          - not_null
+      - name: lap_number
+        description: "Lap number within the session"
+        data_tests:
+          - not_null
+      - name: date_start
+        description: "Timestamp when the lap started"
+        data_tests:
+          - not_null
+      - name: duration_sector_1
+        description: "Duration of sector 1 in seconds"
+      - name: duration_sector_2
+        description: "Duration of sector 2 in seconds"
+      - name: duration_sector_3
+        description: "Duration of sector 3 in seconds"
+      - name: i1_speed
+        description: "Speed at intermediate 1 in km/h"
+      - name: i2_speed
+        description: "Speed at intermediate 2 in km/h"
+      - name: is_pit_out_lap
+        description: "Whether the lap is an out lap from the pit"
+      - name: lap_duration
+        description: "Total lap duration in seconds"
+      - name: segments_sector_1
+        description: "Mini-sector segment flags for sector 1"
+      - name: segments_sector_2
+        description: "Mini-sector segment flags for sector 2"
+      - name: segments_sector_3
+        description: "Mini-sector segment flags for sector 3"
+      - name: st_speed
+        description: "Speed trap reading on the main straight in km/h"

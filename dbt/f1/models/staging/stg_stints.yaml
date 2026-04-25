@@ -1,0 +1,36 @@
+models:
+  - name: stg_stints
+    description: "Staging table for tyre stint data per driver per session"
+    columns:
+      - name: meeting_key
+        description: "Foreign key to the meetings table"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_meetings')
+              field: meeting_key
+      - name: session_key
+        description: "Foreign key to the sessions table"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_sessions')
+              field: session_key
+      - name: driver_number
+        description: "Driver's car number"
+        data_tests:
+          - not_null
+      - name: stint_number
+        description: "Sequential stint number for the driver within the session"
+        data_tests:
+          - not_null
+      - name: lap_start
+        description: "Lap number on which the stint began"
+        data_tests:
+          - not_null
+      - name: lap_end
+        description: "Lap number on which the stint ended"
+      - name: compound
+        description: "Tyre compound used during the stint (e.g., SOFT, MEDIUM, HARD)"
+      - name: tyre_age_at_start
+        description: "Age of the tyre in laps at the start of the stint"

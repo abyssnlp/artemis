@@ -9,6 +9,13 @@ from airflow.sdk import DAG
 from airflow.utils.trigger_rule import TriggerRule
 from common.components.f1_ingest import F1IngestOperator, ensure_raw_tables
 from common.components.f1_validate import F1ValidateOperator
+from common.utils.helpers import (
+    EXECUTION_CONFIG,
+    PROFILE_CONFIG,
+    get_project_config,
+    get_render_config,
+)
+from cosmos.airflow.task_group import DbtTaskGroup
 
 default_args = {
     "owner": "shauryarawat",
@@ -63,7 +70,21 @@ with DAG(dag_id="f1", default_args=default_args, schedule="@once") as dag:
         ingest_tasks.append(ingest_task)
         validate_tasks.append(validate_task)
 
+    staging = DbtTaskGroup(
+        group_id="staging_f1",
+        project_config=get_project_config("f1"),
+        render_config=get_render_config(select=["path:models/staging"]),
+        execution_config=EXECUTION_CONFIG,
+        profile_config=PROFILE_CONFIG,
+        operator_args={"install_deps": True},
+    )
+
+    all_validated = EmptyOperator(
+        task_id="all_validated",
+        trigger_rule=TriggerRule.ALL_SUCCESS,
+    )
+
     test_end = EmptyOperator(task_id="test_end", trigger_rule=TriggerRule.ALL_SUCCESS)
 
-test_start >> setup_raw_tables >> ingest_tasks  # type: ignore
-validate_tasks >> test_end  # type: ignore
+    test_start >> setup_raw_tables >> ingest_tasks  # type: ignore
+    validate_tasks >> all_validated >> staging >> test_end  # type: ignore

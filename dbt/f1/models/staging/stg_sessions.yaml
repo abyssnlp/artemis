@@ -1,0 +1,28 @@
+models:
+  - name: stg_sessions
+    description: "Staging table for sessions data"
+    columns:
+      - name: session_key
+        description: "Unique identifier for the session"
+        data_tests:
+          - not_null
+          - unique
+      - name: session_name
+        description: "Name of the session"
+      - name: session_type
+        description: "Type of the session (e.g., Practice, Qualifying, Race)"
+      - name: meeting_key
+        description: "Foreign key to the meetings table"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_meetings')
+              field: meeting_key
+      - name: date_start
+        description: "Start date and time of the session"
+        data_tests:
+          - not_null
+      - name: date_end
+        description: "End date and time of the session"
+        data_tests:
+          - not_null

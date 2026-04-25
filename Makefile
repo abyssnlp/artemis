@@ -1,4 +1,4 @@
-.PHONY: .uv .precommit lint typecheck launch-stack teardown teardown-all
+.PHONY: .uv .precommit lint typecheck launch-stack teardown teardown-all dbt-parse
 .uv:
 	@uv -V || echo "uv is not installed. Please install uv to manage dependencies."
 
@@ -11,6 +11,9 @@ lint: .uv
 
 typecheck: .uv
 	@uv run pyright -p pyproject.toml
+
+dbt-parse:
+	@cd dbt/f1 && ../../.venv/bin/dbt parse --profiles-dir . --target dev
 
 launch-stack:
 	AIRFLOW_PROJ_DIR=./artemis docker compose --profile flower up -d $(if $(BUILD),--build)

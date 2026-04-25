@@ -1,0 +1,40 @@
+models:
+  - name: stg_drivers
+    description: "Staging table for driver information per session"
+    columns:
+      - name: meeting_key
+        description: "Foreign key to the meetings table"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_meetings')
+              field: meeting_key
+      - name: session_key
+        description: "Foreign key to the sessions table"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_sessions')
+              field: session_key
+      - name: driver_number
+        description: "Driver's car number"
+        data_tests:
+          - not_null
+      - name: broadcast_name
+        description: "Abbreviated name used in TV broadcasts"
+      - name: full_name
+        description: "Driver's full name"
+      - name: name_acronym
+        description: "Three-letter driver acronym"
+      - name: first_name
+        description: "Driver's first name"
+      - name: last_name
+        description: "Driver's last name"
+      - name: team_name
+        description: "Name of the constructor team"
+      - name: team_colour
+        description: "Hex colour code of the team"
+      - name: country_code
+        description: "Three-letter country code of the driver's nationality"
+      - name: headshot_url
+        description: "URL to the driver's headshot image"

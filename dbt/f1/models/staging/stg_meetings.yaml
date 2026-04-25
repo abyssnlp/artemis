@@ -1,0 +1,21 @@
+models:
+  - name: stg_meetings
+    description: "Staging table for meetings data"
+    columns:
+      - name: meeting_key
+        description: "Unique identifier for the meeting"
+        data_tests:
+          - not_null
+          - unique
+      - name: meeting_name
+        description: "Name of the meeting"
+      - name: country
+        description: "Country where the meeting is held"
+      - name: location
+        description: "Location of the meeting"
+      - name: circuit_name
+        description: "Name of the circuit"
+      - name: year
+        description: "Year of the meeting"
+        data_tests:
+          - not_null
