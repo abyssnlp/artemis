@@ -25,8 +25,7 @@ EXECUTION_CONFIG = ExecutionConfig(
 
 def get_render_config(select: list[str] | None = None) -> RenderConfig:
     return RenderConfig(
-        load_method=LoadMode.DBT_MANIFEST,
-        select=select or [],
+        load_method=LoadMode.DBT_MANIFEST, select=select or [], emit_datasets=True
     )
 
 
