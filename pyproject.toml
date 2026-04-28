@@ -103,7 +103,7 @@ pythonVersion = "3.12"
 pythonPlatform = "Linux"
 
 [tool.codespell]
-skip = ".git,.venv,dist,build,uv.lock,__pycache__,.pytest_cache,venv,constraints-3.12.txt"
+skip = ".git,.venv,dist,build,uv.lock,__pycache__,.pytest_cache,venv,constraints-3.12.txt,monitoring"
 ignore-words-list = "ser,deser"
 
 # SQLFluff

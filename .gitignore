@@ -11,3 +11,4 @@ logs
 plugins
 **/config/airflow.cfg
 .ruff_cache
+*-mcp
