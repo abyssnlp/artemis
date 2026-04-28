@@ -15,7 +15,7 @@
   "timezone": "browser",
   "title": "F1 Race Analysis",
   "uid": "f1-race-analysis",
-  "version": 12,
+  "version": 13,
   "weekStart": "",
   "time": {
     "from": "now-6h",
@@ -509,7 +509,7 @@
     {
       "id": 6,
       "title": "Pit Stop Times",
-      "description": "Time lost in pit lane on each pit stop, computed as the duration of the pit-out lap minus the driver's clean competitive pace (20th percentile of clean laps), then filtered to plausible values (10\u201360s). Lower = quicker stop. One coloured bar per stop number per driver. Drivers ordered by their fastest stop (best on top).",
+      "description": "Pit-cycle time loss per stop. Reference pace = the next clean lap of the same stint (so safety-car laps cancel out). Lower = quicker stop. One coloured bar per stop number per driver. Drivers ordered by their fastest stop (best on top).",
       "type": "barchart",
       "gridPos": {
         "x": 0,
@@ -529,7 +529,7 @@
           },
           "format": 0,
           "queryType": "table",
-          "rawSql": "WITH clean_pace AS (\n  SELECT driver_number,\n         quantile(0.2)(lap_duration) AS ref_pace\n  FROM default.fct_laps\n  WHERE session_key = ${session_key}\n    AND session_type = 'Race'\n    AND is_pit_out_lap = 0\n    AND lap_duration IS NOT NULL\n  GROUP BY driver_number\n),\npit_events AS (\n  SELECT f.name_acronym                          AS driver,\n         toUInt32(f.stint_number - 1)            AS stop_idx,\n         round(f.lap_duration - cp.ref_pace, 2)  AS pit_loss\n  FROM default.fct_laps f\n  INNER JOIN clean_pace cp USING(driver_number)\n  WHERE f.session_key = ${session_key}\n    AND f.session_type = 'Race'\n    AND f.is_pit_out_lap = 1\n    AND f.stint_number > 1\n    AND f.lap_duration IS NOT NULL\n    AND f.lap_duration - cp.ref_pace BETWEEN 10 AND 60\n)\nSELECT driver AS Driver,\n       maxIf(pit_loss, stop_idx = 1) AS \"Stop 1\",\n       maxIf(pit_loss, stop_idx = 2) AS \"Stop 2\",\n       maxIf(pit_loss, stop_idx = 3) AS \"Stop 3\",\n       maxIf(pit_loss, stop_idx = 4) AS \"Stop 4\",\n       maxIf(pit_loss, stop_idx = 5) AS \"Stop 5\",\n       maxIf(pit_loss, stop_idx = 6) AS \"Stop 6\"\nFROM pit_events\nGROUP BY driver\nORDER BY min(pit_loss) ASC",
+          "rawSql": "WITH laps AS (\n  SELECT driver_number, name_acronym, lap_number, stint_number, is_pit_out_lap, lap_duration\n  FROM default.fct_laps\n  WHERE session_key = ${session_key}\n    AND session_type = 'Race'\n    AND lap_duration IS NOT NULL\n),\nlap_median AS (\n  SELECT lap_number,\n         median(lap_duration) AS green_lap_time\n  FROM laps\n  WHERE is_pit_out_lap = 0\n  GROUP BY lap_number\n),\npit_events AS (\n  SELECT l.name_acronym                          AS driver,\n         toUInt32(l.stint_number - 1)            AS stop_idx,\n         round(l.lap_duration - lm.green_lap_time, 2) AS pit_loss\n  FROM laps l\n  INNER JOIN lap_median lm USING(lap_number)\n  WHERE l.is_pit_out_lap = 1\n    AND l.stint_number > 1\n    AND l.lap_duration - lm.green_lap_time BETWEEN 5 AND 45\n)\nSELECT driver AS Driver,\n       maxIf(pit_loss, stop_idx = 1) AS \"Stop 1\",\n       maxIf(pit_loss, stop_idx = 2) AS \"Stop 2\",\n       maxIf(pit_loss, stop_idx = 3) AS \"Stop 3\",\n       maxIf(pit_loss, stop_idx = 4) AS \"Stop 4\",\n       maxIf(pit_loss, stop_idx = 5) AS \"Stop 5\",\n       maxIf(pit_loss, stop_idx = 6) AS \"Stop 6\"\nFROM pit_events\nGROUP BY driver\nORDER BY min(pit_loss) ASC",
           "refId": "A"
         }
       ],
