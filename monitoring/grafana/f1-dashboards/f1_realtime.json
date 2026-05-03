@@ -1,0 +1,281 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 0,
+          "queryType": "table",
+          "rawSql": "SELECT position AS Pos, coalesce(tla, driver_no) AS Driver, team_name AS Team, lap AS Lap, gap_to_leader AS Gap, interval_to_ahead AS Interval, if(in_pit = 1, 'YES', '') AS Pit, pit_stops AS Stops\nFROM f1_rt.v_live_positions\nORDER BY position ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Live Positions",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 0,
+          "queryType": "table",
+          "rawSql": "SELECT position AS Pos, coalesce(tla, driver_no) AS Driver, lap AS Lap, sector1_time AS S1, sector2_time AS S2, sector3_time AS S3, last_lap_time AS Last, best_lap_time AS Best\nFROM f1_rt.v_current_sector_times\nORDER BY position ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Current Sector Times",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 0,
+          "queryType": "table",
+          "rawSql": "SELECT coalesce(tla, driver_no) AS Driver, team_name AS Team, feed AS Feed, pit_count AS Stop, compound AS Compound, if(is_new = 1, 'New', 'Used') AS Tyre, total_laps AS Laps, start_laps AS StartLaps, event_time AS Updated\nFROM f1_rt.v_tyre_strategy\nWHERE event_time > now() - INTERVAL 3 HOUR\nORDER BY driver_no, event_time DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Tyre Strategy",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "format": 0,
+          "queryType": "table",
+          "rawSql": "SELECT event_time AS Time, team AS Team, coalesce(tla, driver_no) AS Driver, message AS Message, audio_url AS Audio\nFROM f1_rt.v_team_radio_stream\nWHERE event_time > now() - INTERVAL 3 HOUR\nORDER BY event_time DESC\nLIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Team Radio",
+      "type": "table"
+    }
+  ],
+  "refresh": "500ms",
+  "schemaVersion": 39,
+  "tags": [
+    "f1",
+    "realtime",
+    "livef1"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "F1 Miami Realtime",
+  "uid": "f1-miami-realtime",
+  "version": 1,
+  "weekStart": ""
+}

@@ -12,3 +12,6 @@ plugins
 **/config/airflow.cfg
 .ruff_cache
 *-mcp
+.agent
+.codex
+*.log

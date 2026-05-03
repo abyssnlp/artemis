@@ -34,6 +34,10 @@ dev = [
     "sqlfluff>=4.1.0",
     "sqlfluff-templater-dbt>=4.1.0",
 ]
+real-time = [
+    "confluent-kafka>=2.11.1",
+    "livef1>=1.1.107",
+]
 
 [tool.ruff]
 exclude = [

@@ -432,6 +432,39 @@ services:
     depends_on:
       - prometheus
 
+  redpanda:
+    image: redpandadata/redpanda:v24.3.7
+    container_name: redpanda
+    command:
+      - redpanda
+      - start
+      - --smp
+      - "1"
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 0M
+      - --overprovisioned
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - internal://redpanda:9092,external://localhost:19092
+    ports:
+      - "19092:19092"
+      - "9644:9644"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "info", "--brokers", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
   kibana-setup:
     image: curlimages/curl:8.11.0
     command: ["/bin/sh", "/kibana-setup.sh"]
@@ -509,6 +542,9 @@ services:
       nofile:
         soft: 262144
         hard: 262144
+    depends_on:
+      redpanda:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -523,3 +559,4 @@ volumes:
   grafana-data:
   vault-data:
   clickhouse_data:
+  redpanda-data:
